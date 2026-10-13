@@ -30,7 +30,7 @@ import java.util.UUID
 class EnrollmentRepository(
     private val keyStoreManager: KeyStoreManager,
     private val networkClient: NetworkClient = NetworkClient,
-    private val enrollmentStore: EnrollmentStore = MemoryEnrollmentStore(),
+    val enrollmentStore: EnrollmentStore = MemoryEnrollmentStore(),
     private val lifecycleManager: KeyLifecycleManager = KeyLifecycleManager(keyStoreManager)
 ) {
 
