@@ -109,3 +109,140 @@ The Android user interface is constructed in **Jetpack Compose**. To maintain st
           role = Role.Button
       ) { /* action */ }
   ```
+
+---
+
+## 5. Screen-by-Screen User Flows and Screen Reader Interaction Specifications
+
+Every screen in the Miranova application has an explicit accessibility traversal map and speech script:
+
+### 5.1 Flow 1: Device Registration & Factor Enrollment
+
+```
+[Screen Title (Heading)]
+       │
+       ▼
+[Username / Identity Input Field]
+       │
+       ▼
+[Biometric Protection Preference Checkbox]
+       │
+       ▼
+[Primary Action: "Generate Device Key and Register"]
+       │
+       ▼
+[Live Region: Asynchronous Registration Feedback]
+```
+
+#### Traversal Sequence & Semantic Specifications
+1. **Screen Heading:**
+   * **Node:** `Text("Miranova Device Enrollment")`
+   * **Semantics:** `heading(); traversalIndex = 0f`
+   * **Announcement:** *"Miranova Device Enrollment, Heading"*
+2. **Username / Account Identifier Input:**
+   * **Node:** `OutlinedTextField`
+   * **Semantics:** `contentDescription = "Username or account email address"; traversalIndex = 1f`
+   * **Behavior:** Automatically exposes `autofillHints` and error descriptions via `stateDescription` when invalid.
+3. **Biometric Protection Checkbox:**
+   * **Node:** `Row(Modifier.semantics(mergeDescendants = true) { role = Role.Checkbox })`
+   * **Semantics:** `stateDescription = if (checked) "Checked: Requires biometric authentication before each challenge" else "Not checked: Allows direct device signature"`
+   * **Target:** Minimum $48 \times 48\,\text{dp}$.
+4. **Primary Action Button:**
+   * **Node:** `Button("Register This Device")`
+   * **Semantics:** `role = Role.Button; onClickLabel = "Double tap to generate hardware key in Android Keystore and send public key to Miranova server"`
+5. **Live Region Status Announcements:**
+   * When user triggers generation: `LiveRegionMode.Polite` $\rightarrow$ *"Generating non-exportable hardware key on your device. Please wait."*
+   * When server registers public key: `LiveRegionMode.Assertive` $\rightarrow$ *"Device enrollment complete. Registered key bound to username."*
+   * Focus automatically transitions to the Home / Ready screen.
+
+---
+
+### 5.2 Flow 2: Multi-Factor Authentication Challenge & Cryptographic Signing
+
+```
+[Screen Title: "Authentication Challenge"]
+       │
+       ▼
+[Challenge Context Card (Merged Semantics)]
+ ├─ Service Name / Origin
+ ├─ Session / Request ID
+ └─ Countdown Timer (Polite periodic update)
+       │
+       ▼
+[Primary Action: "Approve & Sign Challenge"]
+       │
+       ▼
+[Secondary Action: "Reject Request"]
+       │
+       ▼
+[Live Region: Signing State & Result]
+```
+
+#### Traversal Sequence & Semantic Specifications
+1. **Screen Heading:**
+   * **Announcement:** *"Authentication Challenge, Heading. One pending request."*
+   * Initial focus lands here on challenge push receipt.
+2. **Challenge Context Card:**
+   * **Container:** `Card(Modifier.semantics(mergeDescendants = true) { ... })`
+   * **Semantic Text:** *"Authentication request from Internal Portal. Request ID 8831. Challenge expires in 45 seconds."*
+   * **Timer Behavior:** The remaining time is **not** spoken every single second (which creates intolerable TalkBack verbosity). It is announced only at milestones (e.g., arrival, 30s remaining, 10s remaining) via a polite live region.
+3. **Approve Action:**
+   * **Node:** `Button("Approve and Sign")`
+   * **Semantics:** `role = Role.Button; onClickLabel = "Double tap to cryptographically sign challenge and approve authentication"`
+   * **Target Bounds:** Full width, height $56\,\text{dp}$ ($\ge 48\,\text{dp}$).
+4. **Reject Action:**
+   * **Node:** `OutlinedButton("Reject")`
+   * **Semantics:** `role = Role.Button; onClickLabel = "Double tap to decline this authentication request and flag as unrecognized"`
+5. **BiometricPrompt / OS Credential Overlay:**
+   * If key requires user presence: System `BiometricPrompt` triggers. TalkBack handles the native OS biometric dialog natively.
+   * On dialog completion/cancellation: Miranova explicitly regains window focus and announces the result.
+6. **Signing & Verification Announcements:**
+   * During signing: `LiveRegionMode.Polite` $\rightarrow$ *"Signing challenge with device key. Verifying with server."*
+   * Verification Success: `LiveRegionMode.Assertive` $\rightarrow$ *"Authentication approved. Session established."* Accompanied by tactile haptic confirmation.
+
+---
+
+### 5.3 Flow 3: Error Handling, Expiry, and Recovery
+
+#### Scenario A: Challenge Expiration (Timeout)
+1. Live region immediately fires: *"Challenge expired after 60 seconds without signature. Request was aborted."*
+2. An accessible alert dialog appears.
+3. Focus is programmatically moved to the dialog heading: *"Challenge Timed Out"*.
+4. Action button provided: *"Dismiss and Return"* (`Role.Button`, $\ge 48\,\text{dp}$).
+
+#### Scenario B: Network Failure / Backend Unavailable
+1. Error Announcement: *"Network connection error. Server could not be reached. Verify your network connection."*
+2. Primary button: *"Retry Connection"* (`onClickLabel = "Attempts to re-contact the authentication service"`).
+3. Focus is held on the Retry button, preventing lost or reset focus.
+
+#### Scenario C: Key Invalidation / Re-enrollment UX
+1. If the underlying Android Keystore key is revoked or invalidated by OS lock-screen reset:
+2. Announcement: *"Security alert: Device hardware key is no longer valid. Re-enrollment is required to restore access."*
+3. Primary button: *"Start Device Re-Enrollment"*, immediately guiding the user to the accessible enrollment flow without leaving them trapped in a broken state.
+
+---
+
+## 6. Focus Management, Anti-Trap Rules, and Live Region Policy
+
+### 6.1 Initial Focus Placement
+Upon any Compose navigation event (`NavController.navigate`):
+* Focus must be programmatically transferred to the top-level screen heading via `FocusRequester.requestFocus()`.
+* TalkBack will immediately identify the new context to the blind user rather than remaining stranded at the bottom of the previous screen.
+
+### 6.2 Focus Restoration
+* When an alert dialog, modal bottom sheet, or BiometricPrompt is dismissed, focus must return to the exact UI element that triggered the dialog.
+* If the trigger element no longer exists (e.g., challenge consumed), focus shifts to the newly mounted top-level status heading.
+
+### 6.3 Anti-Trap Rules for Asynchronous Operations
+* **No Focus Traps in Progress Spinners:** Circular progress indicators (`CircularProgressIndicator`) must be marked `invisibleToUser()` in Compose semantics. 
+* Background progress must **never** hold or steal TalkBack focus. Instead, progress is conveyed via decoupled `Modifier.semantics { liveRegion = LiveRegionMode.Polite }` container strings.
+* While busy, interactive buttons set their state to `stateDescription = "In progress, please wait"` and `enabled = false`.
+
+### 6.4 Live Region Politeness Levels
+| Event Type | Politeness Level | Rationale |
+| :--- | :--- | :--- |
+| Background key generation progress | `LiveRegionMode.Polite` | Queues announcement after user finishes listening to current control. |
+| Time remaining milestone (30s, 10s) | `LiveRegionMode.Polite` | Informs user without interrupting active swipe exploration. |
+| Authentication Success / Access Granted | `LiveRegionMode.Assertive` | Critical outcome; immediate delivery required. |
+| Authentication Denial / Security Tampering | `LiveRegionMode.Assertive` | Critical safety state; interrupts queue. |
+| Session Expiry or Network Drop | `LiveRegionMode.Assertive` | Urgent actionable error requiring user attention. |
