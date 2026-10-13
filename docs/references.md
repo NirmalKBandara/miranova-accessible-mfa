@@ -120,3 +120,42 @@
 
 
 
+
+---
+
+## 7. Threat Modeling & Security Evaluation (Issues #38, #57, #58)
+
+### REF-THR-01: Microsoft Threat Modeling Tool — STRIDE threat categories
+* **Author / Publisher:** Microsoft Learn
+* **URL:** [https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats](https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats)
+* **Relevance & Justification:** Defines the six STRIDE categories (Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege). `08-threat-model.md` applies them per element and per trust boundary.
+
+### REF-THR-02: OWASP ASVS 5.0 — V16 Security Logging and Error Handling
+* **Author / Publisher:** OWASP Foundation
+* **URL:** [https://github.com/OWASP/ASVS/blob/master/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md](https://github.com/OWASP/ASVS/blob/master/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
+* **Relevance & Justification:** Basis for CTL-20, CTL-22 and CTL-26 (log minimisation, authentication event logging, generic error responses) and for the log-leakage test SEC-10.
+
+### REF-THR-03: OWASP Authentication Cheat Sheet
+* **Author / Publisher:** OWASP Cheat Sheet Series
+* **URL:** [https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+* **Relevance & Justification:** Covers generic error messages and enumeration resistance (CTL-04), and the trade-off between throttling and lockout (CTL-02, TM-25).
+
+### REF-THR-04: OWASP Password Storage Cheat Sheet
+* **Author / Publisher:** OWASP Cheat Sheet Series
+* **URL:** [https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+* **Relevance & Justification:** Covers salted, slow hashing of the knowledge factor (CTL-01) and the choice between bcrypt and Argon2id (DEC-05).
+
+### REF-THR-05: OWASP Mobile Application Security Verification Standard (MASVS)
+* **Author / Publisher:** OWASP Mobile Application Security Project
+* **URL:** [https://mas.owasp.org/MASVS/](https://mas.owasp.org/MASVS/)
+* **Relevance & Justification:** Mobile storage, cryptography, network and platform-interaction controls. Used to review the Android client (findings F-07, F-09, F-10, F-12).
+
+### REF-THR-06: Android Network Security Configuration
+* **Author / Publisher:** Android Developers
+* **URL:** [https://developer.android.com/privacy-and-security/security-config](https://developer.android.com/privacy-and-security/security-config)
+* **Relevance & Justification:** The mechanism for limiting cleartext traffic to specific debug hosts (CTL-17, finding F-09).
+
+### REF-THR-07: RFC 8725 — JSON Web Token Best Current Practices
+* **Author / Publisher:** IETF (Sheffer, Hardt, Jones), February 2020
+* **URL:** [https://www.rfc-editor.org/rfc/rfc8725](https://www.rfc-editor.org/rfc/rfc8725)
+* **Relevance & Justification:** Algorithm pinning, rejection of `alg: none`, and claim validation (CTL-18), which SEC-06 tests.

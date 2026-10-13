@@ -96,3 +96,27 @@ This matrix maps each requirement to its corresponding architectural decision, d
 
 
 
+
+---
+
+## 7. Security Threat Model Traceability (Issue #38)
+
+This section maps the SRS threats (§12) to the threat model, the security controls, and the planned verification. Control status is kept in [`09-security-controls.md`](09-security-controls.md). Test results will be added under #57 and #58.
+
+| SRS Threat | Threat Model IDs | Requirements | Controls | Implementation Target | Verification Test Case | Owner |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TH-01** Secret guessing | TM-01 | FR-13, FR-17 | CTL-01, CTL-02, CTL-03 | Backend secret verifier (#48) | `SEC-04`, `TC-04` | `@Nimsika-Bosilu` (test) / `@Viranske-1` (impl) |
+| **TH-02** Replay | TM-03 | FR-21, NFR-S02 | CTL-05, CTL-06 | Challenge service (#45) | `SEC-01`, `TC-05` | `@Nimsika-Bosilu` / `@hasarangadinuj` |
+| **TH-03** Stolen device | TM-11, TM-12 | FR-22, FR-25 | CTL-03, CTL-14, CTL-15 | Keystore policy (#50), device revocation (#44) | `SEC-07` | `@Nimsika-Bosilu` / `@kisajaBeddawala`, `@Viranske-1` |
+| **TH-04** Forged client flags | TM-07, TM-08 | FR-02, FR-22, FR-23 | CTL-09, CTL-10 | MFA state machine (#46), Android auth flow (#54) | `SEC-05`, `TC-11` | `@Nimsika-Bosilu` / `@hasarangadinuj` |
+| **TH-05** Cross-context substitution | TM-05, TM-06 | FR-19, FR-20 | CTL-07, CTL-08 | `CanonicalChallenge.kt` (F-01), verifier (#45) | `SEC-02`, `SEC-03` | `@Nimsika-Bosilu` / `@hasarangadinuj` |
+| **TH-06** DB disclosure | TM-13, TM-18 | FR-09, NFR-S01 | CTL-01, CTL-16, CTL-21 | DB models (#42) | `TC-12` | `@Nimsika-Bosilu` / `@Viranske-1` |
+| **TH-07** Network capture | TM-14, TM-15 | FR-43, NFR-S06 | CTL-17 | `AndroidManifest.xml`, `AppConfig.kt` (F-09) | `TC-15`, config review | `@Nimsika-Bosilu` / `@kisajaBeddawala` |
+| **TH-08** Token theft / expiry | TM-16, TM-17 | FR-27, FR-29 | CTL-18, CTL-19 | Session service (#47) | `SEC-06`, `TC-07`, `TC-08` | `@Nimsika-Bosilu` / `@Viranske-1` |
+| **TH-09** Registration / recovery hijack | TM-09, TM-10 | FR-07, FR-12 | CTL-11, CTL-12, CTL-13 | Enrollment (#44), protocol (#35) (F-03, F-06) | `SEC-07`, `TC-01`, `TC-14` | `@Nimsika-Bosilu` / `@Viranske-1` |
+| **TH-10** Enumeration / brute force | TM-02, TM-24, TM-25 | FR-16, NFR-S05 | CTL-02, CTL-04 | Rate limiting & safe errors (#48) | `SEC-04` | `@Nimsika-Bosilu` / `@Viranske-1` |
+| **TH-11** Overheard voice secret | TM-23 | FR-15, FR-40 | CTL-25 | `TtsManager.kt`, ADR-005 §2.2 | `TtsManagerTest` | `@Nimsika-Bosilu` / `@kisajaBeddawala` |
+| **TH-12** Accessibility social engineering | TM-21, TM-22 | FR-35 | CTL-23, CTL-24 | `AuthChallengeScreen.kt` | Accessibility review (#56) | `@Nimsika-Bosilu` / `@kisajaBeddawala` |
+| **TH-13** Race / clock | TM-04, TM-27 | FR-21, NFR-R02 | CTL-05, CTL-06 | Challenge consume (#45) | `SEC-08`, `SEC-09`, `TC-13` | `@Nimsika-Bosilu` / `@hasarangadinuj` |
+| Logging leakage | TM-19, TM-26 | FR-42, FR-24 | CTL-20, CTL-26 | Audit logging (#49) | `SEC-10`, `TC-12` | `@Nimsika-Bosilu` / `@Viranske-1` |
+| Secrets in repository | TM-28 | FR-03 | CTL-27 | Root `.gitignore`, CI (#43) (F-11) | `SEC-11` | `@Nimsika-Bosilu` / `@NirmalKBandara` |
