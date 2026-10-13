@@ -337,3 +337,21 @@ Authentication frequently occurs under adverse environmental conditions. Miranov
 | **Incoming Phone Call / Interruption** | Challenge arrival interrupted by cellular call or OS notification. | System notification shade integration | Persistent pending challenge card | On app resume, state is re-queried; if time remains, user resumes seamlessly; if expired, polite timeout dialog is shown. |
 | **Offline / Airplane Mode** | No cellular or Wi-Fi connectivity. | TalkBack announcement | High-contrast error banner | Clear immediate notification: *"Network unavailable. Cannot reach Miranova authentication server."* No infinite loading loop. |
 
+---
+
+## 10. Accessibility Verification & Testing Matrix
+
+To guarantee compliance before releases and viva demonstrations, the accessibility matrix defines exact test procedures:
+
+| Test ID | Journey / Screen | Interaction / TalkBack Gesture | Expected Screen Reader Output | Tactile / Audio Cue | Acceptance Verification Criteria |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-ACC-01** | Enrollment: Screen Arrival | Launch App / Navigate to Enrollment | *"Miranova Device Enrollment, Heading. Focus on username input field."* | None | Initial focus lands on heading (or input); title identified as heading. |
+| **TC-ACC-02** | Enrollment: Input & Key Gen | Enter username, swipe right to Register, double-tap | 1. *"Generating non-exportable hardware key on your device. Please wait."*<br>2. *"Device enrollment complete. Registered key bound to username."* | `EAR-01` chime upon completion | Polite async progress announcement; assertive confirmation announcement upon success; no focus trap. |
+| **TC-ACC-03** | Auth: Challenge Arrival | App foregrounded / push notification received | *"Authentication Challenge, Heading. One pending request."* Focus rests on heading. | `HAP-02` (double pulse) | Prominent tactile arrival alert; challenge card exposes origin, request ID, and expiry window. |
+| **TC-ACC-04** | Auth: Swipe Traversal & Focus | Linear swipe right across screen controls | Traverses sequentially: 1. Heading $\rightarrow$ 2. Challenge Summary Card $\rightarrow$ 3. Approve Button $\rightarrow$ 4. Reject Button. | None | Logical reading order (`ACC-06`); no skipped elements; interactive elements announce role. |
+| **TC-ACC-05** | Auth: Approve & Sign | Focus on "Approve and Sign", double-tap | 1. *"Signing challenge with device key. Verifying with server."*<br>2. *"Authentication approved. Access granted."* | `HAP-01` (triple tick) + `EAR-02` (chord) | Crypto signature executed; server verifies; simultaneous haptic and audio confirmation. |
+| **TC-ACC-06** | Auth: Expiry / Timeout | Idle on challenge screen for 60 seconds | *"Challenge expired after 60 seconds without signature. Request was aborted."* Focus moves to dismiss action. | `EAR-03` descending tone | Timeout live announcement fires immediately; user never left in indefinite pending state. |
+| **TC-ACC-07** | Network Drop / Offline | Trigger authentication in Airplane mode | *"Network connection error. Server could not be reached. Verify your network connection."* Focus on Retry. | `HAP-03` buzz | Unambiguous actionable error message; focus pinned to retry control; no silent failure. |
+| **TC-ACC-08** | Screen Curtain Operability | Enable TalkBack Screen Curtain (screen black) | Perform full enrollment and authentication using touch exploration and double-tap gestures only. | Full tactile & audio feedback active | User successfully enrolls and completes authentication with display completely off. |
+
+
