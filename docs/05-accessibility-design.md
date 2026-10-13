@@ -246,3 +246,94 @@ Upon any Compose navigation event (`NavController.navigate`):
 | Authentication Success / Access Granted | `LiveRegionMode.Assertive` | Critical outcome; immediate delivery required. |
 | Authentication Denial / Security Tampering | `LiveRegionMode.Assertive` | Critical safety state; interrupts queue. |
 | Session Expiry or Network Drop | `LiveRegionMode.Assertive` | Urgent actionable error requiring user attention. |
+
+---
+
+## 7. Multimodal Feedback Specification (Haptics & Audio Earcons)
+
+To complement TalkBack speech synthesis without competing for audio bandwidth or disclosing sensitive data, Miranova implements a synchronized tactile-acoustic feedback system:
+
+### 7.1 Haptic Feedback Taxonomy (`VibrationEffect` API)
+Modern Android devices equipped with linear resonant actuators (LRA) provide nuanced tactile feedback. Miranova standardizes four discrete haptic patterns:
+
+| Pattern ID | Trigger Event | Waveform Timings (ms) | Amplitude Profile | Tactile Perception |
+| :--- | :--- | :--- | :--- | :--- |
+| **HAP-01** | Factor Success / Verification Approval | `[0, 30, 40, 30, 40, 50]` | `[0, 160, 0, 200, 0, 255]` | Triple crisp tick with satisfying confirmation crescendo. |
+| **HAP-02** | Authentication Challenge Arrival | `[0, 100, 80, 120]` | `[0, 180, 0, 220]` | Prominent double pulse indicating incoming challenge. |
+| **HAP-03** | Authentication Rejection / Tamper Alert | `[0, 250]` | `[0, 255]` | Long, heavy warning buzz signaling denied access. |
+| **HAP-04** | Timeout Countdown Milestone (10s) | `[0, 40]` | `[0, 140]` | Subtle warning tick nudging user to take action. |
+
+```kotlin
+// Compose Haptic Integration Pattern
+fun triggerHapticFeedback(context: Context, pattern: HapticPattern) {
+    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+    if (!vibrator.hasVibrator()) return
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val effect = when (pattern) {
+            HapticPattern.SUCCESS -> VibrationEffect.createWaveform(
+                longArrayOf(0, 30, 40, 30, 40, 50),
+                intArrayOf(0, 160, 0, 200, 0, 255),
+                -1
+            )
+            HapticPattern.CHALLENGE_ARRIVED -> VibrationEffect.createWaveform(
+                longArrayOf(0, 100, 80, 120),
+                intArrayOf(0, 180, 0, 220),
+                -1
+            )
+            HapticPattern.FAILURE -> VibrationEffect.createOneShot(250, 255)
+            HapticPattern.TICK -> VibrationEffect.createOneShot(40, 140)
+        }
+        vibrator.vibrate(effect)
+    }
+}
+```
+
+### 7.2 Non-Speech Audio Earcons
+Rather than speaking conversational sentences that collide with TalkBack speech synthesizers, Miranova emits brief, distinct non-speech auditory cues (earcons) under 250 milliseconds in duration:
+
+* **EAR-01 (Enrollment Key Ready):** Ascending two-note chime ($C_5 \rightarrow G_5$, 120ms).
+* **EAR-02 (Authentication Approved):** Harmonious major chord chime ($C_5 - E_5 - G_5$, 180ms).
+* **EAR-03 (Challenge Aborted / Expired):** Descending minor tone ($E_5 \rightarrow B_4$, 200ms).
+
+#### Audio Routing and Politeness Rules
+1. Earcons are bundled locally as compressed lossless assets in `res/raw/` to ensure offline availability.
+2. Sounds are played using Android `SoundPool` with `AudioAttributes.USAGE_ASSISTANCE_SONIFICATION` on `AudioAttributes.CONTENT_TYPE_SONIFICATION`.
+3. The sound stream strictly observes system volume settings and Do Not Disturb (DND) modes.
+4. Volume is attenuated to $-6\,\text{dB}$ relative to media volume to guarantee TalkBack speech remains crystal-clear and intelligible above the earcon.
+
+---
+
+## 8. Secrecy and Privacy Protection (Non-Verbal Secret Handling)
+
+### 8.1 Prohibition of Spoken Passcodes & PINs
+* **Privacy Threat:** In public or workplace settings, any system that requires blind users to speak credentials (e.g., "Miranova, my PIN is 4-8-2-1") creates fatal vulnerabilities to acoustic eavesdropping, directional microphones, and opportunistic shoulder-surfers.
+* **Architecture Mandate:** Miranova strictly prohibits verbal/microphone secret capture. User authentication relies on:
+  1. Cryptographic proof-of-possession of the device hardware key (Android Keystore).
+  2. Local device biometric or PIN verification executed via the secure Android OS `BiometricPrompt`.
+
+### 8.2 Non-Visual Numeric Entry & Concealment
+* If a backup PIN or code is required by the factor policy:
+  * Keypad targets must be large ($> 64 \times 64\,\text{dp}$).
+  * TalkBack must **not** speak the entered digit aloud into the environment when headphones are not connected. Instead, Compose provides a non-informative announcement: *"PIN character entered"* accompanied by a subtle tactile tap (`HAP-04`).
+  * Echoing characters aloud is disallowed to protect against ambient eavesdropping.
+
+### 8.3 Screen Curtain Operability (Privacy & Non-Visual Assurance)
+* TalkBack includes a "Screen Curtain" feature that disables the display backlight and renders the screen black while keeping touch and screen reader active.
+* Visually impaired individuals commonly use Screen Curtain in public spaces to preserve battery and prevent sighted onlookers from viewing banking or identity credentials.
+* **Verification Criterion:** All flows (enrollment, approval, rejection, recovery) must be 100% executable under active Screen Curtain mode with zero dependencies on visual feedback.
+
+---
+
+## 9. Environmental Robustness & Fallback Strategy
+
+Authentication frequently occurs under adverse environmental conditions. Miranova guarantees deterministic behavior across all scenarios:
+
+| Operational Scenario | Environmental Barrier | Primary Channel | Secondary Channel | Fallback Guarantee |
+| :--- | :--- | :--- | :--- | :--- |
+| **Subway / Construction Site** | Extreme ambient acoustic noise ($> 85\,\text{dB}$). Audio cues inaudible. | Haptic feedback (`HAP-01`, `HAP-02`) | TalkBack with earphone | Vibration pattern alerts user; linear swipe guides touch approval. |
+| **Executive Meeting / Library** | Device set to Silent/Mute; no audio allowed. | Haptic feedback & TalkBack over headset / Bluetooth Braille display | Visual high-contrast screen | 100% operable with zero audio emission. |
+| **Low-End Hardware / Broken Vibrator** | Device lacks haptic motor or user disabled system vibration. | TalkBack speech synthesizer | Optional Earcon chimes | Semantic accessibility tree conveys all status and error transitions. |
+| **Incoming Phone Call / Interruption** | Challenge arrival interrupted by cellular call or OS notification. | System notification shade integration | Persistent pending challenge card | On app resume, state is re-queried; if time remains, user resumes seamlessly; if expired, polite timeout dialog is shown. |
+| **Offline / Airplane Mode** | No cellular or Wi-Fi connectivity. | TalkBack announcement | High-contrast error banner | Clear immediate notification: *"Network unavailable. Cannot reach Miranova authentication server."* No infinite loading loop. |
+
