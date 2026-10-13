@@ -249,12 +249,12 @@ Upon any Compose navigation event (`NavController.navigate`):
 
 ---
 
-## 7. Multimodal Feedback Specification (Haptics & Audio Earcons)
+## 7. Multimodal Feedback Specification (Haptics, Audio Earcons & TTS)
 
-To complement TalkBack speech synthesis without competing for audio bandwidth or disclosing sensitive data, Miranova implements a synchronized tactile-acoustic feedback system:
+To complement TalkBack screen reader synthesis without competing for audio bandwidth or disclosing sensitive data, Miranova implements a synchronized multimodal feedback system combining tactile vibrations, non-speech earcons, and spoken TTS guidance:
 
 ### 7.1 Haptic Feedback Taxonomy (`VibrationEffect` API)
-Modern Android devices equipped with linear resonant actuators (LRA) provide nuanced tactile feedback. Miranova standardizes four discrete haptic patterns:
+Modern Android devices equipped with linear resonant actuators (LRA) provide nuanced tactile feedback. Miranova standardizes seven discrete haptic patterns:
 
 | Pattern ID | Trigger Event | Waveform Timings (ms) | Amplitude Profile | Tactile Perception |
 | :--- | :--- | :--- | :--- | :--- |
@@ -262,32 +262,9 @@ Modern Android devices equipped with linear resonant actuators (LRA) provide nua
 | **HAP-02** | Authentication Challenge Arrival | `[0, 100, 80, 120]` | `[0, 180, 0, 220]` | Prominent double pulse indicating incoming challenge. |
 | **HAP-03** | Authentication Rejection / Tamper Alert | `[0, 250]` | `[0, 255]` | Long, heavy warning buzz signaling denied access. |
 | **HAP-04** | Timeout Countdown Milestone (10s) | `[0, 40]` | `[0, 140]` | Subtle warning tick nudging user to take action. |
-
-```kotlin
-// Compose Haptic Integration Pattern
-fun triggerHapticFeedback(context: Context, pattern: HapticPattern) {
-    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
-    if (!vibrator.hasVibrator()) return
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val effect = when (pattern) {
-            HapticPattern.SUCCESS -> VibrationEffect.createWaveform(
-                longArrayOf(0, 30, 40, 30, 40, 50),
-                intArrayOf(0, 160, 0, 200, 0, 255),
-                -1
-            )
-            HapticPattern.CHALLENGE_ARRIVED -> VibrationEffect.createWaveform(
-                longArrayOf(0, 100, 80, 120),
-                intArrayOf(0, 180, 0, 220),
-                -1
-            )
-            HapticPattern.FAILURE -> VibrationEffect.createOneShot(250, 255)
-            HapticPattern.TICK -> VibrationEffect.createOneShot(40, 140)
-        }
-        vibrator.vibrate(effect)
-    }
-}
-```
+| **HAP-05** | Cautionary Irreversible Warning | `[0, 150, 100, 150]` | `[0, 200, 0, 240]` | Double pulsed cautionary buzz for key revocation / resets. |
+| **HAP-06** | Setup Wizard Step Navigation | `[0, 25]` | `[0, 180]` | Crisp single tactile bump when progressing wizard steps. |
+| **HAP-07** | Secrecy / Privacy Leak Alert | `[0, 80, 50, 80, 50, 120]` | `[0, 255, 0, 255, 0, 255]` | Firm staccato alarm pulse signaling secret disclosure interception. |
 
 ### 7.2 Non-Speech Audio Earcons
 Rather than speaking conversational sentences that collide with TalkBack speech synthesizers, Miranova emits brief, distinct non-speech auditory cues (earcons) under 250 milliseconds in duration:
@@ -297,10 +274,26 @@ Rather than speaking conversational sentences that collide with TalkBack speech 
 * **EAR-03 (Challenge Aborted / Expired):** Descending minor tone ($E_5 \rightarrow B_4$, 200ms).
 
 #### Audio Routing and Politeness Rules
-1. Earcons are bundled locally as compressed lossless assets in `res/raw/` to ensure offline availability.
+1. Earcons are bundled locally as compressed lossless assets in `res/raw/` (or synthesized dynamically via PCM for testing).
 2. Sounds are played using Android `SoundPool` with `AudioAttributes.USAGE_ASSISTANCE_SONIFICATION` on `AudioAttributes.CONTENT_TYPE_SONIFICATION`.
 3. The sound stream strictly observes system volume settings and Do Not Disturb (DND) modes.
 4. Volume is attenuated to $-6\,\text{dB}$ relative to media volume to guarantee TalkBack speech remains crystal-clear and intelligible above the earcon.
+
+### 7.3 Accessible Spoken Text-to-Speech (TTS) Guidance & Secrecy Guard (`TtsManager`)
+For users navigating without an active screen reader, or who require complementary spoken confirmations, Miranova integrates an accessible Text-to-Speech engine (`TtsManager`) that operates alongside the native accessibility tree.
+
+#### Secrecy Protection Rules for Audio Channels
+In compliance with WCAG 2.2 Criterion 3.3.8 and Section 8 of this specification:
+1. **Zero Secret Utterances:** The speech synthesizer must **never** speak cryptographic nonces, raw key material, session tokens, or numeric OTP codes aloud into the environment (`TtsManager.containsSecret()`).
+2. **Deterministic Token Scrubbing:** Any utterance containing sensitive cryptographic bytes is intercepted and scrubbed (`TtsManager.sanitizeUtterance()`), replacing raw tokens with non-disclosing placeholders (e.g. `[protected token]`).
+3. **Privacy Alert Waveform:** Attempted secret disclosures trigger tactile `HAP-07` (Secrecy Alert) to notify the user tactilely that a secret output was blocked from public audio broadcast.
+4. **Mute & TalkBack Coexistence:** Spoken TTS guidance automatically degrades to silence when system ringer/notification streams are muted or in vibrate mode, and respects TalkBack focus traversal without speech collision.
+
+### 7.4 User Accessibility Preferences & Diagnostics (`SettingsScreen`)
+Users maintain complete sovereignty over sensory feedback channels via the dedicated Accessibility Settings & Diagnostics screen:
+* **Granular Toggles:** Independent on/off controls for Tactile Haptic Vibration, Non-Speech Audio Chimes (Earcons), and Spoken TTS Guidance.
+* **Audition & Diagnostics:** Live test buttons with $\ge 48\,\text{dp}$ touch targets allowing users to feel approval haptics, hear earcons, and verify that the Secrecy Guard properly scrubs simulated tokens.
+* **Persistence & Fallback:** Preferences are stored in `SharedPreferencesAccessibilityPreferencesStore` on Android, with a fast in-memory implementation (`MemoryAccessibilityPreferencesStore`) for JVM testing.
 
 ---
 

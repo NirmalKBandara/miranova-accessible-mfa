@@ -2,6 +2,9 @@ package com.miranova.mfa.ui.accessibility
 
 /**
  * Standardized tactile vibration patterns defined in docs/05-accessibility-design.md §7.1.
+ *
+ * Extended in Issue #53 for discrete complementary feedback across authentication,
+ * step navigation, irreversible warnings, and secrecy protection alerts.
  */
 enum class HapticPattern(
     val patternId: String,
@@ -47,5 +50,35 @@ enum class HapticPattern(
         timings = longArrayOf(0, 40),
         amplitudes = intArrayOf(0, 140),
         description = "Subtle tick for timer milestone or input feedback"
+    ),
+
+    /**
+     * HAP-05: Pulsing cautionary double buzz for irreversible re-enrollment warnings.
+     */
+    WARNING(
+        patternId = "HAP-05",
+        timings = longArrayOf(0, 150, 100, 150),
+        amplitudes = intArrayOf(0, 200, 0, 240),
+        description = "Cautionary pulsing buzz for irreversible actions or alerts"
+    ),
+
+    /**
+     * HAP-06: Crisp single bump when progressing between guided setup steps.
+     */
+    STEP_NAVIGATION(
+        patternId = "HAP-06",
+        timings = longArrayOf(0, 25),
+        amplitudes = intArrayOf(0, 180),
+        description = "Crisp step transition bump"
+    ),
+
+    /**
+     * HAP-07: Staccato alarm pulse signaling secrecy protection interception.
+     */
+    SECRECY_ALERT(
+        patternId = "HAP-07",
+        timings = longArrayOf(0, 80, 50, 80, 50, 120),
+        amplitudes = intArrayOf(0, 255, 0, 255, 0, 255),
+        description = "Firm staccato alarm pulse for privacy and secrecy protection"
     )
 }

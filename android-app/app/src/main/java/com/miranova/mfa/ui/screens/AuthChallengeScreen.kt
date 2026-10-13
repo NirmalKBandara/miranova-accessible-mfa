@@ -80,7 +80,7 @@ fun AuthChallengeScreen(
 
     // Screen arrival: notify challenge arrival and request focus on heading
     LaunchedEffect(key1 = Unit) {
-        multimodal.notifyChallengeArrived()
+        multimodal.notifyChallengeArrived("Authentication request received from ${challenge.origin}. Double tap approve to confirm.")
         headingFocusRequester.requestFocus()
     }
 
@@ -111,7 +111,7 @@ fun AuthChallengeScreen(
             sessionNonce = challenge.nonce,
             initialTimeoutSeconds = 60,
             onTimeout = {
-                multimodal.notifyTimeout()
+                multimodal.notifyTimeout("Authentication challenge timed out.")
                 activeError = ActionableError.Timeout(60)
             },
             onMilestoneTick = {
@@ -143,7 +143,7 @@ fun AuthChallengeScreen(
         ) {
             OutlinedButton(
                 onClick = {
-                    multimodal.notifyAuthFailure()
+                    multimodal.notifyAuthFailure("Authentication challenge declined.")
                     statusMessage = "Authentication request rejected."
                     statusSeverity = StatusSeverity.WARNING
                     onReject()
@@ -181,7 +181,7 @@ fun AuthChallengeScreen(
                                 // Verification success
                                 statusMessage = "Authentication approved. Session established."
                                 statusSeverity = StatusSeverity.SUCCESS
-                                multimodal.notifyAuthSuccess()
+                                multimodal.notifyAuthSuccess("Authentication approved. Session established.")
                                 delay(600L)
                                 onApprove()
                             } else {
@@ -189,7 +189,7 @@ fun AuthChallengeScreen(
                                 delay(800L)
                                 statusMessage = "Authentication approved. Session established."
                                 statusSeverity = StatusSeverity.SUCCESS
-                                multimodal.notifyAuthSuccess()
+                                multimodal.notifyAuthSuccess("Authentication approved. Session established.")
                                 delay(400L)
                                 onApprove()
                             }

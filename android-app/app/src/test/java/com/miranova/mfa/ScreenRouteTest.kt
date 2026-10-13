@@ -15,6 +15,7 @@ class ScreenRouteTest {
             Screen.AuthChallenge,
             Screen.HomeSession,
             Screen.ErrorRecovery,
+            Screen.ReEnrollment,
             Screen.Settings
         )
 

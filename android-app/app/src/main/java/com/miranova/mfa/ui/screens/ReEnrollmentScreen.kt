@@ -91,16 +91,20 @@ fun ReEnrollmentScreen(
     val isProcessing = enrollmentState is EnrollmentState.GeneratingKey ||
             enrollmentState is EnrollmentState.RegisteringWithBackend
 
+    LaunchedEffect(Unit) {
+        multimodal.notifyWarning("Warning: Re-enrolling will permanently revoke this device's current security key.")
+    }
+
     // Observe state changes for accessibility announcements and terminal success
     LaunchedEffect(enrollmentState) {
         when (enrollmentState) {
             is EnrollmentState.Enrolled -> {
-                multimodal.notifyEnrollmentReady()
+                multimodal.notifyEnrollmentReady("Device re-enrollment complete. Security key re-established.")
                 delay(600)
                 onReEnrollmentSuccess(enrollmentState.username)
             }
             is EnrollmentState.EnrollmentFailed -> {
-                multimodal.notifyAuthFailure()
+                multimodal.notifyAuthFailure("Device re-enrollment failed.")
                 activeError = enrollmentState.error
             }
             else -> {}
