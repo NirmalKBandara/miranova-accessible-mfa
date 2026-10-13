@@ -48,6 +48,7 @@ fun HomeScreen(
     onTriggerChallenge: () -> Unit,
     onLogout: () -> Unit,
     onReEnroll: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     healthRepository: HealthRepository = remember { HealthRepository() }
 ) {
@@ -176,6 +177,24 @@ fun HomeScreen(
                     )
             ) {
                 Text("Re-enroll Device", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+
+        if (onOpenSettings != null) {
+            OutlinedButton(
+                onClick = onOpenSettings,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .accessibleTouchTarget(minHeight = 56.dp)
+                    .accessibleControl(
+                        role = Role.Button,
+                        label = "Open Accessibility Settings and Feedback Diagnostics",
+                        onClickLabel = "Double tap to customize haptic and audio preferences",
+                        traversalIndex = 4.5f
+                    )
+            ) {
+                Text("Accessibility Settings", style = MaterialTheme.typography.labelLarge)
             }
         }
 

@@ -15,6 +15,7 @@ import com.miranova.mfa.ui.screens.EnrollmentScreen
 import com.miranova.mfa.ui.screens.ErrorRecoveryScreen
 import com.miranova.mfa.ui.screens.HomeScreen
 import com.miranova.mfa.ui.screens.ReEnrollmentScreen
+import com.miranova.mfa.ui.screens.SettingsScreen
 
 /**
  * Accessible Navigation Graph managing route transitions and TalkBack context handoffs.
@@ -56,6 +57,9 @@ fun MiranovaNavGraph(
                 },
                 onReEnroll = {
                     navController.navigate(Screen.ReEnrollment.route)
+                },
+                onOpenSettings = {
+                    navController.navigate(Screen.Settings.route)
                 },
                 onLogout = {
                     navController.navigate(Screen.Enrollment.route) {
@@ -103,6 +107,14 @@ fun MiranovaNavGraph(
                     navController.navigate(Screen.HomeSession.route) {
                         popUpTo(Screen.ErrorRecovery.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }
