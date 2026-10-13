@@ -49,4 +49,20 @@
 ### REF-SEC-01: Android Keystore System
 * **Author / Publisher:** Android Security Team
 * **URL:** [https://developer.android.com/privacy-and-security/keystore](https://developer.android.com/privacy-and-security/keystore)
-* **Relevance & Justification:** Authoritative reference for generating non-exportable hardware-backed asymmetric keys within Secure Element / StrongBox / TEE.
+* **Relevance & Justification:** Authoritative reference for generating non-exportable hardware-backed asymmetric keys within Secure Element / StrongBox / TEE. Governs `AndroidKeyStoreManager` and `KeyGenParameterSpec` configurations.
+
+### REF-SEC-02: NIST SP 800-63B: Digital Identity Guidelines — Authentication and Lifecycle Management
+* **Author / Publisher:** National Institute of Standards and Technology (NIST)
+* **URL:** [https://pages.nist.gov/800-63-3/sp800-63b.html](https://pages.nist.gov/800-63-3/sp800-63b.html)
+* **Relevance & Justification:** Establishes Authenticator Assurance Level 3 (AAL3) requirements for hardware-backed cryptographic proof-of-possession tokens, replay-resistant challenge-response protocols, and device-bound credentials. Governs `CanonicalChallenge` and `ChallengeSigner`.
+
+### REF-SEC-03: FIPS 186-5: Digital Signature Standard (DSS)
+* **Author / Publisher:** National Institute of Standards and Technology (NIST)
+* **URL:** [https://csrc.nist.gov/pubs/fips/186-5/final](https://csrc.nist.gov/pubs/fips/186-5/final)
+* **Relevance & Justification:** Defines the Elliptic Curve Digital Signature Algorithm (ECDSA) specification using the NIST P-256 (`secp256r1`) curve and SHA-256 digest (`SHA256withECDSA`).
+
+### REF-SEC-04: Android Hardware-Backed Keystore & KeyMint Architecture
+* **Author / Publisher:** Android Open Source Project (AOSP) Security
+* **URL:** [https://source.android.com/docs/security/features/keystore](https://source.android.com/docs/security/features/keystore)
+* **Relevance & Justification:** Details the hardware abstraction layer (HAL) interface between user-space Android OS and isolated execution environments (TrustZone TEE and dedicated StrongBox Secure Elements). Governs `SecurityLevel` discovery and `KeyPermanentlyInvalidatedException` handling.
+

@@ -25,3 +25,14 @@
 | :--- | :--- | :--- | :--- | :--- |
 | **ASM-AND-01** | The application targets Android API 26 (Android 8.0) as the minimum SDK and API 35 as the compile/target SDK, utilizing OpenJDK 17. | API 26 provides native `VibrationEffect`, Android Keystore modern algorithms, and baseline Compose runtime compatibility across >95% of active Android devices. | Legacy devices (< Android 8) cannot run the application. | Documented project constraints in charter; build script configuration `minSdk = 26`, `compileSdk = 35`. |
 | **ASM-AND-02** | The Android emulator alias IP `10.0.2.2:8000` transparently maps to `localhost:8000` on the host machine where the FastAPI backend service runs. | Standard Android Studio emulator virtual networking architecture. | Emulator cannot communicate with backend service during local demonstration. | Automated health-check client testing via `HealthRepository` and configurable base URL fallback in `AppConfig`. |
+
+---
+
+## 3. Cryptographic & Keystore Assumptions (Issue #50)
+
+| Assumption ID | Statement | Rationale / Evidence | Risk if False | Validation Method |
+| :--- | :--- | :--- | :--- | :--- |
+| **ASM-SEC-01** | Asymmetric private keys generated within Android Keystore provider are hardware-bound and non-exportable; plaintext key bytes cannot be extracted by user-space applications or root compromise. | Android Keystore design guarantees that private key operations execute inside isolated hardware (TEE or StrongBox SE); `privateKey.encoded` returns `null` on hardware-backed devices. | Attacker copies or clones authenticator private key across devices. | Verification in `AndroidKeyStoreManager` checking non-exportability and `KeyInfo.isInsideSecureHardware` / `securityLevel`. |
+| **ASM-SEC-02** | Device lock screen credential removal or biometric alteration permanently invalidates authorization-bound cryptographic keys (`setInvalidatedByBiometricEnrollment(true)`). | Android Keystore hardware Keymaster/KeyMint invalidation policy raises `KeyPermanentlyInvalidatedException` if the security boundary is altered. | Unauthorized user accesses device after credential wipe and uses existing MFA keys. | Tested in `KeyStoreManagerTest` and trapped by `KeyLifecycleManager` returning `KeyStatus.PERMANENTLY_INVALIDATED`. |
+| **ASM-SEC-03** | Canonical challenge message encoding (`miranova:auth:v1:<nonce>:<timestamp>:<origin>:<action>`) combined with SHA-256 with ECDSA signing guarantees non-repudiation and prevents cross-protocol replay attacks. | NIST SP 800-63B §5.1.4 and FIPS 186-5 require structured challenge framing with cryptographic nonce, origin binding, and replay freshness checks. | Man-in-the-middle or malicious proxy replays intercepted signatures or modifies origin context. | Unit testing in `CanonicalChallengeTest` ensuring exact deterministic string and byte representation. |
+
