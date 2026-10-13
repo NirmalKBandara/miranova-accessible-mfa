@@ -36,3 +36,14 @@
 | **ASM-SEC-02** | Device lock screen credential removal or biometric alteration permanently invalidates authorization-bound cryptographic keys (`setInvalidatedByBiometricEnrollment(true)`). | Android Keystore hardware Keymaster/KeyMint invalidation policy raises `KeyPermanentlyInvalidatedException` if the security boundary is altered. | Unauthorized user accesses device after credential wipe and uses existing MFA keys. | Tested in `KeyStoreManagerTest` and trapped by `KeyLifecycleManager` returning `KeyStatus.PERMANENTLY_INVALIDATED`. |
 | **ASM-SEC-03** | Canonical challenge message encoding (`miranova:auth:v1:<nonce>:<timestamp>:<origin>:<action>`) combined with SHA-256 with ECDSA signing guarantees non-repudiation and prevents cross-protocol replay attacks. | NIST SP 800-63B §5.1.4 and FIPS 186-5 require structured challenge framing with cryptographic nonce, origin binding, and replay freshness checks. | Man-in-the-middle or malicious proxy replays intercepted signatures or modifies origin context. | Unit testing in `CanonicalChallengeTest` ensuring exact deterministic string and byte representation. |
 
+---
+
+## 4. TalkBack-First UI & Interaction Assumptions (Issue #52)
+
+| Assumption ID | Statement | Rationale / Evidence | Risk if False | Validation Method |
+| :--- | :--- | :--- | :--- | :--- |
+| **ASM-UI-01** | Excluding visual progress spinners from the Compose accessibility tree (`invisibleToUser()`) while using decoupled polite live regions prevents TalkBack focus traps during asynchronous cryptographic operations. | WCAG 2.2 Criterion 2.1.2 (No Keyboard Trap) and Android TalkBack interaction guidelines; spinners steal continuous focus if announced as active animated nodes. | Blind users become trapped in rotating progress loops and cannot reach cancel/recovery controls. | Unit & Compose semantics testing in `AccessibleLoadingIndicator` verifying exclusion from semantic hierarchy. |
+| **ASM-UI-02** | Milestone-only countdown announcements (arrival, 30s, 10s) coupled with subtle tactile vibration (`HAP-04`) provide temporal awareness without overwhelming TalkBack speech channels. | Continuous 1-second spoken announcements drown out TalkBack navigation gestures and user focus exploration. | Speech collision, cognitive overload, inability to read challenge context details. | Verification in `ChallengeContextCard` and `MultimodalFeedbackManagerTest`. |
+| **ASM-UI-03** | Sanitized, actionable error recovery dialogs stating the next safe action protect secrecy by preventing leakage of private key bytes, session cookies, or raw server traces. | Acceptance criterion for Issue #52 and OWASP Mobile Top 10 M4 (Insufficient Secrecy / Sensitive Data Exposure). | Eavesdropping bystanders or screen recording intercepts internal tokens or key material. | Validated in `ActionableErrorTest` and `AccessibleErrorDialog`. |
+
+
