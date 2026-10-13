@@ -8,6 +8,7 @@ import com.miranova.mfa.crypto.KeyStoreManager
 import com.miranova.mfa.data.config.AppConfig
 import com.miranova.mfa.data.model.EnrollmentState
 import com.miranova.mfa.data.model.RegistrationResponse
+import com.miranova.mfa.data.network.NetworkCaller
 import com.miranova.mfa.data.network.NetworkClient
 import com.miranova.mfa.data.network.NetworkResult
 import com.miranova.mfa.data.store.EnrollmentRecord
@@ -29,7 +30,7 @@ import java.util.UUID
  */
 class EnrollmentRepository(
     private val keyStoreManager: KeyStoreManager,
-    private val networkClient: NetworkClient = NetworkClient,
+    private val networkClient: NetworkCaller = NetworkClient,
     val enrollmentStore: EnrollmentStore = MemoryEnrollmentStore(),
     private val lifecycleManager: KeyLifecycleManager = KeyLifecycleManager(keyStoreManager)
 ) {
@@ -54,6 +55,8 @@ class EnrollmentRepository(
         }
     )
     val enrollmentState: StateFlow<EnrollmentState> = _enrollmentState.asStateFlow()
+
+    fun isEnrolled(): Boolean = enrollmentStore.isEnrolled()
 
     /**
      * Executes the atomic enrollment workflow:

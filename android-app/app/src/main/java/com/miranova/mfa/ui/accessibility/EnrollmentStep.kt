@@ -28,5 +28,8 @@ enum class EnrollmentStep(
         stepIndex = 3,
         stepTitle = "Generate Key and Register",
         stepInstructions = "Generate a non-exportable hardware key in Android Keystore and complete device enrollment."
-    )
+    );
+
+    val accessibleAnnouncement: String
+        get() = "Step $stepIndex of $totalSteps: $stepTitle"
 }
