@@ -6,7 +6,7 @@ import pytest
 
 import sec_contract as contract
 from sec_config import MAX_FAILED_ATTEMPTS
-from sec_helpers import assert_denied, assert_no_internal_details, error_shape, response_has_token
+from sec_helpers import assert_denied, assert_no_internal_details, error_shape, json_or_empty, response_has_token
 
 pytestmark = pytest.mark.backend
 
@@ -16,7 +16,7 @@ def _attempt(api, username, secret):
     start = api.post("auth_start", contract.auth_start_body(username))
     if start.status_code >= 400:
         return "auth_start", start
-    txn = contract.parse_transaction_id(start.json()) or ""
+    txn = contract.parse_transaction_id(json_or_empty(start)) or ""
     return "verify_secret", api.post("verify_secret", contract.verify_secret_body(txn, secret))
 
 

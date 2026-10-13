@@ -8,6 +8,7 @@ Configuration (environment variables):
     MIRANOVA_MAX_FAILED_ATTEMPTS   wrong-secret attempts before throttling is expected (default 10)
     MIRANOVA_MAX_EXPIRY_WAIT       max seconds SEC-08 may wait for a challenge to expire (default 130)
     MIRANOVA_TEST_JWT_SECRET       HS256 key of a *local test* backend, enables the expired-token test (optional)
+    MIRANOVA_CONCURRENCY           parallel requests in SEC-09 (default 10)
 """
 
 from __future__ import annotations

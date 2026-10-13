@@ -79,6 +79,7 @@ def test_revoked_device_cannot_authenticate(api, enrolled):
     Refs: TM-10, TM-11, TH-03, TH-09, TC-14, FR-12, CTL-15
     Expected: refused at device-challenge or device-verify. Skipped if no revocation endpoint exists.
     """
+    api.path("revoke_device")  # skip early if the contract has no revocation endpoint
     user, device = enrolled
     token = api.login(user, device).token
     revoke = api.post("revoke_device", contract.revoke_device_body(device.device_id), token=token)

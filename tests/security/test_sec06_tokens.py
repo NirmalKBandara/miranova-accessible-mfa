@@ -81,7 +81,10 @@ def test_expired_token_is_rejected(api, enrolled):
     token = api.login(user, device).token
     if not is_jwt(token):
         pytest.skip("session token is not a JWT")
-    _, payload, _ = jwt_parts(token)
+    header, payload, _ = jwt_parts(token)
+    if header.get("alg") != "HS256":
+        # Minting with HS256 against an RS/ES backend would be rejected for the wrong reason.
+        pytest.skip(f"backend signs with {header.get('alg')}; expired-token minting supports HS256 only")
     payload.update({"iat": int(time.time()) - 7200, "exp": int(time.time()) - 3600})
     _assert_rejected(api, jwt_hs256(payload, TEST_JWT_SECRET.encode()), "expired token")
 

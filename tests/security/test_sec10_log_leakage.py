@@ -6,7 +6,7 @@ import pytest
 
 import sec_contract as contract
 from sec_config import LOG_PATH
-from sec_helpers import SoftwareDeviceKey
+from sec_helpers import SoftwareDeviceKey, json_or_empty
 
 pytestmark = pytest.mark.backend
 
@@ -38,7 +38,7 @@ def test_logs_do_not_contain_secrets_tokens_or_signatures(api, enrolled, log_fil
     wrong_secret = "Wrong-" + user.secret
     start = api.post("auth_start", contract.auth_start_body(user.username))
     if start.status_code < 400:
-        txn = contract.parse_transaction_id(start.json()) or ""
+        txn = contract.parse_transaction_id(json_or_empty(start)) or ""
         api.post("verify_secret", contract.verify_secret_body(txn, wrong_secret))
     api.get("me", token=result.token)
     new_lines = _read_from(log_file, offset)
