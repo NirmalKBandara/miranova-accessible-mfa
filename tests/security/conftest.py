@@ -38,7 +38,7 @@ def pytest_configure(config: pytest.Config) -> None:
     if host not in LOCAL_HOSTS and not ALLOW_REMOTE:
         pytest.exit(
             f"Refusing to run security tests against non-local host '{host}'. These tests are only for the "
-            "team's own environment with synthetic accounts (SRS §12). Set MIRANOVA_ALLOW_REMOTE=1 only for a "
+            "team's own environment with synthetic accounts (SRS section 12). Set MIRANOVA_ALLOW_REMOTE=1 only for a "
             "team-owned demo host.",
             returncode=4,
         )
