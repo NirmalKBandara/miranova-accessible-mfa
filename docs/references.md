@@ -66,3 +66,23 @@
 * **URL:** [https://source.android.com/docs/security/features/keystore](https://source.android.com/docs/security/features/keystore)
 * **Relevance & Justification:** Details the hardware abstraction layer (HAL) interface between user-space Android OS and isolated execution environments (TrustZone TEE and dedicated StrongBox Secure Elements). Governs `SecurityLevel` discovery and `KeyPermanentlyInvalidatedException` handling.
 
+---
+
+## 4. UI Accessibility, Semantics & Multimodal Design (Issue #52)
+
+### REF-UI-01: WCAG 2.2 Success Criteria 2.1.2, 2.5.8, and 4.1.3
+* **Author / Publisher:** World Wide Web Consortium (W3C Recommendation, 2023)
+* **URL:** [https://www.w3.org/TR/WCAG22/](https://www.w3.org/TR/WCAG22/)
+* **Relevance & Justification:** Mandates No Keyboard/Focus Trap (2.1.2), Minimum Target Size of $48 \times 48\,\text{dp}$ (2.5.8), and dynamic asynchronous status announcements via live regions (4.1.3). Governs `AccessibleLoadingIndicator` and `AccessibleStatusBanner`.
+
+### REF-UI-02: Android Developers: Jetpack Compose Accessibility Architecture
+* **Author / Publisher:** Android Open Source Project (AOSP) Developer Relations
+* **URL:** [https://developer.android.com/develop/ui/compose/accessibility](https://developer.android.com/develop/ui/compose/accessibility)
+* **Relevance & Justification:** Defines Compose semantic properties including `invisibleToUser()`, `isTraversalGroup`, `traversalIndex`, `mergeDescendants`, and `liveRegion`. Governs `AccessibilityModifiers.kt` and `AuthChallengeScreen`.
+
+### REF-UI-03: Android VibrationEffect & Audio USAGE_ASSISTANCE_SONIFICATION
+* **Author / Publisher:** Android Open Source Project (AOSP) Media & Frameworks
+* **URL:** [https://developer.android.com/reference/android/os/VibrationEffect](https://developer.android.com/reference/android/os/VibrationEffect)
+* **Relevance & Justification:** Standardizes linear resonant actuator (LRA) waveform pulse synthesis and sonification stream routing without TalkBack speech attenuation. Governs `HapticFeedbackManager` and `EarconManager`.
+
+
