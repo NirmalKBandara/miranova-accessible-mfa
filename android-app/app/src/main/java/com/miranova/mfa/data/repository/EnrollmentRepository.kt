@@ -2,6 +2,8 @@ package com.miranova.mfa.data.repository
 
 import com.miranova.mfa.crypto.CryptoException
 import com.miranova.mfa.crypto.DeviceRegistrationPayload
+import com.miranova.mfa.crypto.KeyLifecycleManager
+import com.miranova.mfa.crypto.KeyStatus
 import com.miranova.mfa.crypto.KeyStoreManager
 import com.miranova.mfa.data.config.AppConfig
 import com.miranova.mfa.data.model.EnrollmentState
@@ -28,7 +30,8 @@ import java.util.UUID
 class EnrollmentRepository(
     private val keyStoreManager: KeyStoreManager,
     private val networkClient: NetworkClient = NetworkClient,
-    private val enrollmentStore: EnrollmentStore = MemoryEnrollmentStore()
+    private val enrollmentStore: EnrollmentStore = MemoryEnrollmentStore(),
+    private val lifecycleManager: KeyLifecycleManager = KeyLifecycleManager(keyStoreManager)
 ) {
 
     companion object {
@@ -166,6 +169,61 @@ class EnrollmentRepository(
      */
     fun cancelEnrollment(keyAlias: String = DEFAULT_KEY_ALIAS) {
         rollbackKey(keyAlias)
+        _enrollmentState.value = EnrollmentState.Unenrolled
+    }
+
+    /**
+     * Checks whether the registered key is still cryptographically valid or was invalidated
+     * by OS lock screen changes.
+     */
+    fun checkEnrollmentHealth(keyAlias: String = DEFAULT_KEY_ALIAS): KeyStatus {
+        val status = lifecycleManager.checkKeyStatus(keyAlias)
+        when (status) {
+            is KeyStatus.Invalidated -> {
+                enrollmentStore.markInvalidated()
+                _enrollmentState.value = EnrollmentState.ReEnrollmentRequired(
+                    reason = status.reason,
+                    previousKeyAlias = keyAlias
+                )
+            }
+            is KeyStatus.NotEnrolled -> {
+                if (enrollmentStore.isEnrolled()) {
+                    enrollmentStore.clearEnrollment()
+                    _enrollmentState.value = EnrollmentState.Unenrolled
+                }
+            }
+            else -> {
+                // Key is valid or transient error
+            }
+        }
+        return status
+    }
+
+    /**
+     * Irreversible re-enrollment action:
+     * 1. Confirms and revokes previous invalid key from Keystore.
+     * 2. Clears stale local enrollment store.
+     * 3. Generates fresh key pair and registers it with backend.
+     */
+    suspend fun reEnrollDevice(
+        username: String,
+        requireBiometric: Boolean = false,
+        keyAlias: String = DEFAULT_KEY_ALIAS
+    ): EnrollmentState {
+        // Irreversible cleanup of old key material
+        rollbackKey(keyAlias)
+        enrollmentStore.clearEnrollment()
+
+        // Re-execute fresh device registration
+        return registerDevice(username, requireBiometric, keyAlias)
+    }
+
+    /**
+     * Revokes active device enrollment, deletes hardware key, and resets local state.
+     */
+    fun revokeCurrentEnrollment(keyAlias: String = DEFAULT_KEY_ALIAS) {
+        rollbackKey(keyAlias)
+        enrollmentStore.clearEnrollment()
         _enrollmentState.value = EnrollmentState.Unenrolled
     }
 
