@@ -8,5 +8,6 @@ sealed class Screen(val route: String, val title: String) {
     data object AuthChallenge : Screen("auth_challenge", "Authentication Challenge")
     data object HomeSession : Screen("home_session", "Session Active")
     data object ErrorRecovery : Screen("error_recovery", "Error Recovery")
+    data object ReEnrollment : Screen("re_enrollment", "Device Re-enrollment")
     data object Settings : Screen("settings", "Settings & Diagnostics")
 }

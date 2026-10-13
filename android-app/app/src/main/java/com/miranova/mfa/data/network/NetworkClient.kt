@@ -13,9 +13,17 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 /**
+ * Abstract network caller interface for testability and mock injection.
+ */
+interface NetworkCaller {
+    suspend fun get(url: String): NetworkResult<String>
+    suspend fun post(url: String, jsonBody: String): NetworkResult<String>
+}
+
+/**
  * Robust OkHttp network client for backend API communication.
  */
-object NetworkClient {
+object NetworkClient : NetworkCaller {
 
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
@@ -26,7 +34,7 @@ object NetworkClient {
         .retryOnConnectionFailure(true)
         .build()
 
-    suspend fun get(url: String): NetworkResult<String> = withContext(Dispatchers.IO) {
+    override suspend fun get(url: String): NetworkResult<String> = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(url)
             .get()
@@ -36,7 +44,7 @@ object NetworkClient {
         executeRequest(request)
     }
 
-    suspend fun post(url: String, jsonBody: String): NetworkResult<String> = withContext(Dispatchers.IO) {
+    override suspend fun post(url: String, jsonBody: String): NetworkResult<String> = withContext(Dispatchers.IO) {
         val body: RequestBody = jsonBody.toRequestBody(JSON_MEDIA_TYPE)
         val request = Request.Builder()
             .url(url)
