@@ -99,4 +99,24 @@
 * **URL:** [https://www.w3.org/TR/webauthn-2/#sctn-registering-a-new-credential](https://www.w3.org/TR/webauthn-2/#sctn-registering-a-new-credential)
 * **Relevance & Justification:** Defines best practices for public key credential creation, user verification policy (`requireUserAuth`), and authenticator re-registration flows upon key invalidation. Governs `DeviceRegistrationPayload` and `ReEnrollmentScreen`.
 
+---
+
+## 6. Audio, Text-to-Speech & Haptic Feedback References (Issue #53)
+
+### REF-MUL-01: Android TextToSpeech API & AudioAttributes Sonification
+* **Author / Publisher:** Android Open Source Project (AOSP) Frameworks
+* **URL:** [https://developer.android.com/reference/android/speech/tts/TextToSpeech](https://developer.android.com/reference/android/speech/tts/TextToSpeech)
+* **Relevance & Justification:** Authoritative reference for on-device speech synthesis, queue management (`QUEUE_FLUSH`, `QUEUE_ADD`), language localization, and audio stream routing. Governs `TtsManager` and `TextToSpeechEngine`.
+
+### REF-MUL-02: WCAG 2.2 Success Criterion 1.4.2 (Audio Control) & 3.3.8 (Accessible Authentication / Secrecy)
+* **Author / Publisher:** World Wide Web Consortium (W3C Recommendation, 2023)
+* **URL:** [https://www.w3.org/WAI/WCAG22/Understanding/audio-control](https://www.w3.org/WAI/WCAG22/Understanding/audio-control)
+* **Relevance & Justification:** Mandates independent user control and muting mechanisms for application audio, alongside secrecy requirements that prevent public disclosure of authentication credentials through assistive speech output. Governs `AccessibilityPreferences`, `SystemAudioInspector`, and secrecy guard filtering.
+
+### REF-MUL-03: Android Vibration and Haptic Feedback Guidelines
+* **Author / Publisher:** Google Android Design & Engineering
+* **URL:** [https://developer.android.com/design/ui/mobile/guides/patterns/haptics](https://developer.android.com/design/ui/mobile/guides/patterns/haptics)
+* **Relevance & Justification:** Best practices for tactile cue clarity, distinguishing transient confirmation clicks from sustained error/warning pulses, and graceful degradation on devices lacking variable-amplitude actuator support. Governs `HapticPattern` and `HapticFeedbackManager`.
+
+
 
