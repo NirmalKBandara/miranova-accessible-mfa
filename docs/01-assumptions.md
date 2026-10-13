@@ -68,3 +68,17 @@
 
 
 
+---
+
+## 7. Security & Threat Model Assumptions (Issue #38)
+
+* **Contributor:** De Silva N. N. B. (`@Nimsika-Bosilu`) — Threat Modeling & Security Evaluation. See [`08-threat-model.md`](08-threat-model.md).
+
+| Assumption ID | Statement | Rationale / Evidence | Risk if False | Validation Method |
+| :--- | :--- | :--- | :--- | :--- |
+| **ASM-THR-01** | Attackers know the full source code and API contract, because the repository is public. Security must not depend on hiding endpoints or message formats. | Kerckhoffs's principle; the repository is public on GitHub. | Controls that rely on obscurity fail silently. | Threat model §4 (AT-01); all `tests/security` tests use only the public contract. |
+| **ASM-THR-02** | Every field sent by the Android client is attacker-controlled: factor flags, timestamps, `hardware_backed`, `security_level`, and any public key inside a proof. | SRS §6.1 authority rule (FR-02); a modified client or a script can send any JSON. | The server trusts forged client state and grants access without both factors. | SEC-03 and SEC-05 negative tests. |
+| **ASM-THR-03** | The prototype runs only on a local/demo network with synthetic accounts. Local HTTP to `10.0.2.2` is a documented development exception and is not evidence of transport security. | ASM-04, SRS §10.4, FR-43. | Results are over-claimed as production transport security. | Residual risk RR-03; configuration review. |
+| **ASM-THR-04** | Device private keys are not exportable on hardware-backed devices, but the server **cannot verify** the hardware level because key attestation is not implemented. Emulators report `SOFTWARE`. | Android Keystore documentation (REF-SEC-01); `DeviceRegistrationPayload` sends no attestation chain. | A server-side policy based on `hardware_backed` can be bypassed. | Residual risk RR-02; finding F-03. |
+| **ASM-THR-05** | A compromised (rooted or malware-infected) **unlocked** device is outside what the design fully protects against. The key can still be *used* there, even though it cannot be *exported*. | MFA limits the damage of a single compromised factor, not a fully compromised endpoint (SRS §12.1). | Protection against device malware is over-claimed. | Residual risk RR-01; TM-12. |
+| **ASM-THR-06** | Security tests (#57) run only against the team's own local backend with synthetic accounts, never against third-party systems. | SRS §12 testing ethics. | Unauthorised testing / ethical breach. | `tests/security/README.md`; `MIRANOVA_BASE_URL` defaults to localhost. |
