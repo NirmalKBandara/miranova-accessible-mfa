@@ -4,10 +4,10 @@
 * **Document owner:** De Silva N. N. B. (`@Nimsika-Bosilu`)
 * **Related issues:** #38 (initial control mapping), #57 (verification tests), #58 (post-test evaluation)
 * **Threat source:** [`08-threat-model.md`](08-threat-model.md)
-* **Version:** 0.1 — initial mapping (pre-implementation)
+* **Version:** 0.2 — pre-backend evaluation (Android client + repository only)
 * **Last updated:** 2026-10-13
 
-> **Status of this document.** This version maps each threat to the controls the team **plans** to implement. A control is marked **Implemented** only where code already exists on `dev`. A control is marked **Verified** only after a passing test in `tests/security/` (or another linked test) supports it. Issue #58 will update the status, evidence and residual-risk columns after the #57 tests have run against the integrated system.
+> **Status of this document.** §2–§3 map each threat to the controls the team **plans** to implement. A control is marked **Implemented** only where code already exists on `dev`. It is marked **Verified** only after a passing test in `tests/security/` (or another linked test) supports it. §4–§6 are the first part of issue #58. They evaluate what can be evaluated **before the backend exists**: the Android client and the repository. They also record the prototype's limitations and list overstated claims in project documents. Backend controls stay **Pending** until the #57 suite has run against the integrated system.
 
 ## 1. Status and type legend
 
@@ -95,6 +95,78 @@ Every P0 threat must have at least one preventive control and one verification t
 
 ---
 
-## 4. Evaluation results
+## 4. Evaluation results (issue #58)
 
-*To be completed under #58 after the #57 suite runs against the integrated build. For each control, #58 records the implementation link, test ID, observed result, date/commit, final status and residual risk. It also adds a prototype-limitations section.*
+### 4.1 Evaluation snapshot — before the backend exists
+
+* **Evaluated commit:** `dev` @ `e499b64` (after PR #70), 2026-10-13.
+* **Evidence used:** (a) code review of the Android client against each control; (b) `tests/security/` run with no backend: SEC-11 = 2 passed, 1 xfail (F-11); every backend test skipped.
+* **Not used as evidence:** Android unit tests in `android-app/app/src/test/` exist, but the security owner did not re-run them for this evaluation (the repository has no Gradle wrapper script). They also run on the JVM with mocks, not on a device. Results from the throwaway reference server used to validate the #57 suite (see `tests/security/README.md`) say nothing about MiraNova and are **not** evidence for any control below.
+
+| Control | Implementation evidence (`dev`) | Test evidence observed | Result | Status | Residual risk / gap |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| CTL-07 signing-context binding | [`CanonicalChallenge.kt`](../android-app/app/src/main/java/com/miranova/mfa/crypto/CanonicalChallenge.kt) signs `miranova:auth:v1:<nonce>:<ts>:<origin>:<action>` | None (SEC-02 needs the backend) | Binds nonce, origin and action only. No transaction, account or device binding. The delimiter is ambiguous (F-01). | **Partial** | TM-05 is open until the server defines the signed context |
+| CTL-10 server-confirmed success only | [`AuthChallengeScreen.kt`](../android-app/app/src/main/java/com/miranova/mfa/ui/screens/AuthChallengeScreen.kt) | Code review | Announces "Session established" after local signing. The mock path approves without a key (F-07). | **Partial (stub)** | TM-08: the user is told they are authenticated when they are not |
+| CTL-14 per-use user authentication on the key | [`AndroidKeyStoreManager.kt`](../android-app/app/src/main/java/com/miranova/mfa/crypto/AndroidKeyStoreManager.kt) `generateKeyPair()` | Code review | Correct when `requireBiometric = true`. The StrongBox fallback path drops the auth parameters (F-12). Auth is off by default. | **Partial** | TM-12: with auth off, an unlocked phone can use the key |
+| CTL-16 non-exportable key, `allowBackup=false` | `AndroidKeyStoreManager.kt`, [`AndroidManifest.xml`](../android-app/app/src/main/AndroidManifest.xml) | Code review only. `KeyStoreManagerTest` uses a JVM mock (F-05). | The key is generated in `AndroidKeyStore` with `PURPOSE_SIGN`. Backups are disabled. The non-export check is a no-op. | **Implemented — not verified on a device** | RR-02: no attestation; emulator keys are software-backed |
+| CTL-17 TLS / cleartext limited to debug | `AndroidManifest.xml`, [`AppConfig.kt`](../android-app/app/src/main/java/com/miranova/mfa/data/config/AppConfig.kt) | Code review | `usesCleartextTraffic="true"` for every host. Default URLs are `http://` (F-09). | **Partial** | TM-14 / RR-03: traffic is readable on the demo network |
+| CTL-22 generic errors (client side) | [`EnrollmentRepository.kt`](../android-app/app/src/main/java/com/miranova/mfa/data/repository/EnrollmentRepository.kt), `AuthChallengeScreen.kt`, `EnrollmentScreen.kt` | Code review | User-facing errors include `${e.message}` and raw server bodies (F-10) | **Partial** | TM-20: internal details shown and spoken to the user |
+| CTL-25 no spoken secrets / TTS filter | [`TtsManager.kt`](../android-app/app/src/main/java/com/miranova/mfa/ui/accessibility/TtsManager.kt) `containsSecret()`, `sanitizeUtterance()`; no `RECORD_AUDIO` permission | Code review; unit tests exist (`TtsManagerTest`), not re-run | The regex filter covers app TTS only. TalkBack reads the nonce (F-13). | **Implemented — partially effective** | TM-23: regex filtering is best effort |
+| CTL-27 no secrets in Git | Root `.gitignore` empty (F-11) | **SEC-11:** `test_no_secret_patterns_in_tracked_files` passed; `test_no_credential_files_tracked` passed; `test_gitignore_excludes_local_secret_files` **xfail** | Nothing sensitive is tracked today, but `.env` would not be ignored | **Partial** | TM-28: risk returns as soon as the backend adds a `.env` |
+| CTL-01–06, 08, 09, 11–13, 15, 18–21, 23, 24, 26, and the server side of CTL-22 (backend and new UI controls) | Not implemented yet (#40–#49, #54) | SEC-00…SEC-10 skipped: backend not reachable | — | **Pending** | Evaluated after the #57 run against the integrated build |
+
+### 4.2 Interim conclusion
+
+As of `e499b64`, **no MiraNova security control can be marked Verified.** The client-side protections that exist (Keystore key generation, disabled backups, the TTS secrecy filter, no microphone permission) are real, but they are either unverified on a device or only partly effective. The central MFA guarantees (server-side factor enforcement, single-use challenges, session control) do not exist yet. The current Android flow also has no knowledge factor (F-08) and announces success without a server (F-07). **The prototype must not yet be described as providing multi-factor authentication.**
+
+---
+
+## 5. Prototype limitations
+
+These limitations hold even if every planned control is implemented. The final report and the viva should state them (SRS §12.1, NFR-S09).
+
+| ID | Limitation | Consequence | Related |
+| :--- | :--- | :--- | :--- |
+| L-01 | The demo backend runs locally over HTTP (`10.0.2.2` / LAN). There is no TLS termination. | Transport confidentiality and integrity are **not demonstrated**. Captured traffic would expose the secret and tokens. | RR-03, TM-14, F-09 |
+| L-02 | Emulator keys are software-backed (`SecurityLevel.SOFTWARE`). | Hardware non-exportability is **not shown** in an emulator demo. | RR-02, CTL-16 |
+| L-03 | No Android key attestation. The server cannot verify `hardware_backed` / `security_level`. | Any hardware-backing claim is client-reported only. | RR-02, F-03 |
+| L-04 | Recovery and re-enrollment are a controlled demo/operator process (DEC-08 is undecided). | Recovery cannot be called production-safe. Lost-device handling depends on an operator. | RR-04, TM-10 |
+| L-05 | Accounts are synthetic, with no identity proofing (ASM-05). | The system authenticates "the enrolled holder", not a verified real person. | SRS §1.4 |
+| L-06 | Tested device classes are not yet confirmed (ASM-01, ASM-03). Only one emulator or device is expected. | Behaviour on StrongBox / older TEE / OEM variants is untested. | NFR-A06 |
+| L-07 | No usability study with visually impaired participants is confirmed. | Accessibility claims rest on design review and team testing only. | SRS §4.3, #56 |
+| L-08 | Security testing is limited to the team's own black-box tests. No independent penetration test, fuzzing or code audit tool was used. | Defects outside the tested threat list may remain. | RR-07 |
+| L-09 | An unlocked or compromised device can use the key (signing oracle). | MFA limits single-factor compromise, not endpoint compromise. | RR-01, TM-12 |
+| L-10 | Rate limiting slows guessing but cannot make it impossible, and back-off can be abused for lockout. | Residual online-guessing and lockout risk. | RR-06, TM-25 |
+| L-11 | No NIST AAL, WCAG or OWASP conformance assessment was performed. | The project may cite these standards as design references only, not as conformance (SRS §1 "How to use", §12.1). | §6 below |
+
+---
+
+## 6. Claims-wording review
+
+#58 requires that results are not overstated. The following statements in project documents claim more than the design or the evidence supports. They are listed here for their owners to revise; **this review does not edit other owners' files.** Suggested wording follows SRS §12.1.
+
+| ID | Location | Current wording (abridged) | Why it is overstated | Suggested wording | Owner |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| W-01 | [ADR-003](adr/ADR-003-android-keystore.md) §2.2 | "returns `null`, **mathematically guaranteeing** that the private key cannot be exported" | Non-exportability is a platform property that depends on the device and the security level, not a mathematical guarantee. The emulator is software-backed, and the code check is a no-op (F-05). | "On hardware-backed devices the Keystore is designed not to release private key material (`getEncoded()` returns `null`). Emulator keys are software-backed." | `@kisajaBeddawala` |
+| W-02 | ADR-003 §3 | "**High Security (NIST AAL2 Alignment)**: Private keys **cannot be stolen** via software root exploits…" | SRS §4.2 excludes certification at any AAL. A rooted device can still *use* the key (RR-01). | "Reduces the risk of key extraction from app storage or backups. No AAL claim is made." | `@kisajaBeddawala` |
+| W-03 | ADR-003 §3 | "canonical payloads **defeat** MITM tampering and challenge replay" | Replay resistance depends on server-side single-use and expiry checks, which are not implemented or tested yet (CTL-05/06). The current message has no transaction binding (F-01). | "Together with server-side single-use and expiry checks (to be tested in SEC-01/SEC-08), signed challenges are intended to resist replay." | `@kisajaBeddawala` |
+| W-04 | ADR-003 §3 | "**Zero Secret Disclosure**: … **cannot intercept secrets**" | The approved model still uses a knowledge secret that can be observed or guessed (TM-01, TM-23). | "Device proof involves no spoken or displayed secret. The knowledge factor remains observable and is protected by masked input and rate limiting." | `@kisajaBeddawala` |
+| W-05 | [`01-assumptions.md`](01-assumptions.md) ASM-SEC-01 | "plaintext key bytes **cannot be extracted** by user-space applications **or root compromise**" | Root compromise is outside what the design can resist (ASM-THR-05). The emulator is software-backed. | "…are intended to be non-exportable on hardware-backed devices. Root compromise can still misuse the key." | `@kisajaBeddawala` |
+| W-06 | `01-assumptions.md` ASM-SEC-03 | "**guarantees non-repudiation and prevents** cross-protocol replay" | Non-repudiation is not a project goal. Replay protection is a server property (F-01, CTL-05). | "Domain-separates MiraNova signatures (prefix `miranova:auth:v1`). Replay is rejected by the server's single-use checks." | `@kisajaBeddawala` |
+| W-07 | `01-assumptions.md` ASM-ACC-05 | "**completely eliminates** the need for cognitive tests" | The knowledge factor still requires remembering a secret. | "Removes the need to transcribe OTP codes. A remembered secret is still required for the knowledge factor." | `@kisajaBeddawala` |
+| W-08 | `01-assumptions.md` ASM-UI-03 | "dialogs … **preventing leakage** of … raw server traces" | Contradicted by the code: error strings include `${e.message}` and raw server bodies (F-10). | Keep the goal, and add "requires mapping server errors to fixed messages (open, F-10)". | `@kisajaBeddawala` |
+| W-09 | [ADR-005](adr/ADR-005-accessibility-strategy.md) §2.4; [`references.md`](references.md) REF-ACC-03 | "**committed to WCAG 2.2 Level AA compliance**" / "The Miranova architecture **conforms to Level AA**" | No conformance evaluation has been done. WCAG is a web standard used here as a design reference (SRS EXT-04, L-11). | "Uses WCAG 2.2 AA success criteria as design targets. Conformance has not been evaluated." | `@kisajaBeddawala` |
+| W-10 | ADR-005 §3 | "Zero spoken secrets **prevents eavesdropping**" | TalkBack reads the nonce (F-13). The TTS filter is regex-based. The knowledge secret could still be observed when it is typed. | "Reduces acoustic exposure: no secret is requested by voice, and app TTS output is filtered." | `@kisajaBeddawala` |
+| W-11 | [`05-accessibility-design.md`](05-accessibility-design.md) §9 | "Miranova **guarantees** deterministic behavior across all scenarios"; "**100%** operable" | Untested so far (#56 pending). | "Is designed to remain operable in these scenarios. Verified in #56." | `@kisajaBeddawala` |
+| W-12 | [`11-traceability-matrix.md`](11-traceability-matrix.md) §6 "Secrecy Guard" row | "Regex filter **preventing** verbal output of…" | Regex filtering is best effort, and TalkBack output is not filtered. | "Regex filter that scrubs known secret patterns from app TTS output." | `@kisajaBeddawala` |
+
+Self-review: `08-threat-model.md` and this document were checked with the same rule. One absolute statement (TM-12, "the key cannot be exported") was reworded to "is designed not to be exportable".
+
+---
+
+## 7. Remaining #58 work (after the backend is integrated)
+
+- [ ] Run the #57 suite against the integrated build and attach `tests/security/results/security-test-report.md`.
+- [ ] Update every **Pending** row in §4.1 with implementation links, SEC test results, date/commit, final status and residual risk.
+- [ ] Re-check F-01…F-13 and W-01…W-12, and record which were fixed.
+- [ ] Add the security findings to `docs/11-traceability-matrix.md` and hand a summary to the group design (#61).
