@@ -1,0 +1,34 @@
+name: miranova
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command:
+      - uvicorn
+      - app.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      - --reload
+    environment:
+      MIRANOVA_APP_NAME: "${MIRANOVA_APP_NAME:-MiraNova Authentication API}"
+      MIRANOVA_ENVIRONMENT: "${MIRANOVA_ENVIRONMENT:-local}"
+      MIRANOVA_DEBUG: "${MIRANOVA_DEBUG:-false}"
+      MIRANOVA_LOG_LEVEL: "${MIRANOVA_LOG_LEVEL:-INFO}"
+      MIRANOVA_DOCS_ENABLED: "${MIRANOVA_DOCS_ENABLED:-true}"
+    init: true
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./backend/app:/app/app:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
