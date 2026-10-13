@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     onTriggerChallenge: () -> Unit,
     onLogout: () -> Unit,
+    onReEnroll: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     healthRepository: HealthRepository = remember { HealthRepository() }
 ) {
@@ -158,6 +159,24 @@ fun HomeScreen(
                 )
         ) {
             Text("Check Backend Health", style = MaterialTheme.typography.labelLarge)
+        }
+
+        if (onReEnroll != null) {
+            OutlinedButton(
+                onClick = onReEnroll,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .accessibleTouchTarget(minHeight = 56.dp)
+                    .accessibleControl(
+                        role = Role.Button,
+                        label = "Re-enroll device security credentials",
+                        onClickLabel = "Double tap to replace or re-register device key",
+                        traversalIndex = 4f
+                    )
+            ) {
+                Text("Re-enroll Device", style = MaterialTheme.typography.labelLarge)
+            }
         }
 
         OutlinedButton(
