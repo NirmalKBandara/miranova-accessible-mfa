@@ -81,6 +81,7 @@ fun EnrollmentScreen(
     var statusSeverity by remember { mutableStateOf(StatusSeverity.INFO) }
 
     LaunchedEffect(key1 = currentStep) {
+        multimodal.notifyNavigationStep(currentStep.stepIndex, currentStep.totalSteps, currentStep.stepTitle)
         headingFocusRequester.requestFocus()
     }
 
@@ -342,35 +343,35 @@ fun EnrollmentScreen(
                                 if (enrollmentRepository != null) {
                                     when (val res = enrollmentRepository.registerDevice(username, biometricRequired, keyAlias)) {
                                         is EnrollmentState.Enrolled -> {
-                                            multimodal.notifyEnrollmentReady()
+                                            multimodal.notifyEnrollmentReady("Device enrollment complete. Registered key bound to $username.")
                                             statusMessage = "Device enrollment complete. Registered key bound to $username."
                                             statusSeverity = StatusSeverity.SUCCESS
                                             delay(500L)
                                             onEnrollmentComplete()
                                         }
                                         is EnrollmentState.EnrollmentFailed -> {
-                                            multimodal.notifyAuthFailure()
+                                            multimodal.notifyAuthFailure("Device enrollment failed.")
                                             activeError = res.error
                                         }
                                         else -> {}
                                     }
                                 } else if (keyStoreManager != null) {
                                     keyStoreManager.generateKeyPair(keyAlias, requireUserAuth = biometricRequired)
-                                    multimodal.notifyEnrollmentReady()
+                                    multimodal.notifyEnrollmentReady("Device enrollment complete. Registered key bound to $username.")
                                     statusMessage = "Device enrollment complete. Registered key bound to $username."
                                     statusSeverity = StatusSeverity.SUCCESS
                                     delay(500L)
                                     onEnrollmentComplete()
                                 } else {
                                     delay(600L)
-                                    multimodal.notifyEnrollmentReady()
+                                    multimodal.notifyEnrollmentReady("Device enrollment complete. Registered key bound to $username.")
                                     statusMessage = "Device enrollment complete. Registered key bound to $username."
                                     statusSeverity = StatusSeverity.SUCCESS
                                     delay(400L)
                                     onEnrollmentComplete()
                                 }
                             } catch (e: Exception) {
-                                multimodal.notifyAuthFailure()
+                                multimodal.notifyAuthFailure("Device enrollment failed.")
                                 activeError = ActionableError.Generic("Enrollment failed: ${e.message}")
                             } finally {
                                 isEnrolling = false
