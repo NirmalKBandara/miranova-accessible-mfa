@@ -1,6 +1,5 @@
 package com.miranova.mfa.crypto
 
-import android.util.Base64
 
 /**
  * Signed challenge response payload matching backend /api/auth/verify expectation.
@@ -28,7 +27,7 @@ class ChallengeSigner(
     fun signChallenge(alias: String, challenge: CanonicalChallenge): SignedChallengeResponse {
         val canonicalBytes = challenge.toCanonicalBytes()
         val signatureBytes = keyStoreManager.sign(alias, canonicalBytes)
-        val signatureBase64 = Base64.encodeToString(signatureBytes, Base64.NO_WRAP)
+        val signatureBase64 = Base64Util.encodeToString(signatureBytes)
         val publicKeyBase64 = keyStoreManager.getPublicKeyBase64(alias).orEmpty()
 
         return SignedChallengeResponse(
@@ -46,7 +45,7 @@ class ChallengeSigner(
      */
     fun verifyChallenge(alias: String, challenge: CanonicalChallenge, signatureBase64: String): Boolean {
         return try {
-            val signatureBytes = Base64.decode(signatureBase64, Base64.NO_WRAP)
+            val signatureBytes = Base64Util.decode(signatureBase64)
             val canonicalBytes = challenge.toCanonicalBytes()
             keyStoreManager.verify(alias, canonicalBytes, signatureBytes)
         } catch (e: Exception) {

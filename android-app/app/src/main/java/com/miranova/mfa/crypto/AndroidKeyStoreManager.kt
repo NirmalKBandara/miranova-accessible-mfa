@@ -5,7 +5,6 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
-import android.util.Base64
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -101,7 +100,7 @@ class AndroidKeyStoreManager(
                 // Note: On software mock environments this may occur, but on device it must be null
             }
 
-            val publicKeyBase64 = Base64.encodeToString(keyPair.public.encoded, Base64.NO_WRAP)
+            val publicKeyBase64 = Base64Util.encodeToString(keyPair.public.encoded)
             val info = inspectKey(alias, keyPair.private, keyPair.public, publicKeyBase64, requireUserAuth)
             return info
         } catch (e: CryptoException) {
@@ -128,7 +127,7 @@ class AndroidKeyStoreManager(
 
     override fun getPublicKeyBase64(alias: String): String? {
         val pub = getPublicKey(alias) ?: return null
-        return Base64.encodeToString(pub.encoded, Base64.NO_WRAP)
+        return Base64Util.encodeToString(pub.encoded)
     }
 
     @Throws(CryptoException::class)
@@ -189,7 +188,7 @@ class AndroidKeyStoreManager(
 
     override fun getKeyInfo(alias: String): KeyInfoModel? {
         val pub = getPublicKey(alias) ?: return null
-        val pubBase64 = Base64.encodeToString(pub.encoded, Base64.NO_WRAP)
+        val pubBase64 = Base64Util.encodeToString(pub.encoded)
         val priv = getPrivateKey(alias) ?: return null
         return inspectKey(alias, priv, pub, pubBase64, false)
     }
