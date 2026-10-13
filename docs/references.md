@@ -85,4 +85,18 @@
 * **URL:** [https://developer.android.com/reference/android/os/VibrationEffect](https://developer.android.com/reference/android/os/VibrationEffect)
 * **Relevance & Justification:** Standardizes linear resonant actuator (LRA) waveform pulse synthesis and sonification stream routing without TalkBack speech attenuation. Governs `HapticFeedbackManager` and `EarconManager`.
 
+---
+
+## 5. Device Registration & Credential Lifecycle (Issue #51)
+
+### REF-ENR-01: NIST SP 800-63B §5.1: Authenticator Registration & Binding
+* **Author / Publisher:** National Institute of Standards and Technology (NIST)
+* **URL:** [https://pages.nist.gov/800-63-3/sp800-63b.html#authenticator-reg](https://pages.nist.gov/800-63-3/sp800-63b.html#authenticator-reg)
+* **Relevance & Justification:** Mandates atomic authenticator binding where hardware cryptographic keys generated on client devices must either successfully complete enrollment with the verifier or be revoked/deleted without leaving orphaned credentials. Governs `EnrollmentRepository.registerDevice` rollback semantics.
+
+### REF-ENR-02: W3C Web Authentication (WebAuthn) Credential Registration & Exclusion
+* **Author / Publisher:** W3C / FIDO Alliance
+* **URL:** [https://www.w3.org/TR/webauthn-2/#sctn-registering-a-new-credential](https://www.w3.org/TR/webauthn-2/#sctn-registering-a-new-credential)
+* **Relevance & Justification:** Defines best practices for public key credential creation, user verification policy (`requireUserAuth`), and authenticator re-registration flows upon key invalidation. Governs `DeviceRegistrationPayload` and `ReEnrollmentScreen`.
+
 
